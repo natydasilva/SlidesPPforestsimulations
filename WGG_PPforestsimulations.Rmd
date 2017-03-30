@@ -1,0 +1,168 @@
+---
+title: <span style="color:#000000"> Projection pursuit classification random forests  </span>
+author: "Natalia da Silva"
+date: "March 31, 2017"
+output: ioslides_presentation
+bibliography: bibliophd.bib
+---
+
+
+ <style>
+ .title-slide {
+     background-image: url(forest.jpg);
+     background-repeat: no-repeat;
+     padding:40px;
+     background-size: 1000px 800px;
+   }
+   </style>
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+## <span style="color:#26734d">Introduction</span> 
+-Ensemle models
+-PPtree
+-PPforest
+-Simulations results
+-Maybe some Viz paper advances
+
+## <span style="color:#26734d"> Ensemble models</span> 
+- Ensembles learning methods: combined multiple individual models trained independently to build a prediction model.
+
+- Some well known examples of ensemble learning methods are, boosting [@schapire1990strength], bagging [@breiman1996bagging] and random forest [@breiman2001random] among others.
+
+-Main differences between ensembles, type of individual models to be combined and  the ways these individual models are combined. 
+
+
+## <span style="color:#26734d"> PPtree</span> 
+Combines tree structure methods with projection pursuit dimension reduction.
+**PPtree** projection pursuit classification tree:
+
+1. In each node a PP index is maximized to find the optimal $1-D$ projection, $\alpha^*$, for separating all classes in the current data.
+2. Reduce the number of classes to two, by comparing means and assign new labels, $G_1$ or $G_2$ ($y_i^*$) to each observation.
+3. Re-do PP with these new group labels finding the $1-D$ projection, $\alpha$ using $(x_i,y^*)$.
+4. Calculate the decision boundary c, keep $\alpha $ and $c$.
+5.  Separate data into two groups using new group labels $G_1$ and $G_2$.
+6.  For each group, stop if there is only one class else repeat the procedure, the splitting steps are iterated until the last two classes are separated.
+
+
+##<span style="colorL#26734d">PPtree example</span>
+```{r libs, echo = FALSE, warnin = FALSE, message=FALSE,fig.align="center"}
+library(MASS)
+library(ggplot2)
+library(RColorBrewer)
+library(PPtreeViz)
+library(gridExtra)
+library(reshape2)
+library(PPforest)
+library(plyr)
+library(dplyr)
+
+```
+<center>
+```{r, echo = FALSE, fig.height = 7, fig.width = 7, fig.align = "center", cache = TRUE}
+simu3 <- function(mux1, mux2, muy1, muy2, muz1, muz2,  cor1,cor2,cor3) {
+  set.seed(666)
+  bivn <- mvrnorm(100, mu = c(mux1, mux2), Sigma = matrix(c(1, cor1, cor1, 1), 2))
+  bivn2 <- mvrnorm(100, mu = c(muy1, muy2), Sigma = matrix(c(1, cor2, cor2, 1), 2))
+  bivn3 <- mvrnorm(100, mu = c(muz1, muz2), Sigma = matrix(c(1, cor3, cor3, 1), 2))
+
+  d1 <- data.frame(Sim = "sim1", bivn)
+  d2 <- data.frame(Sim = "sim2", bivn2)
+  d3 <- data.frame(Sim = "sim3", bivn3)
+  rbind(d1, d2, d3)
+}
+
+
+
+dat.pl2 <- simu3(-1,0.6,0,-0.6, 2,-1,0.95, 0.95, 0.95)
+
+
+
+grilla <- base::expand.grid(X1 = seq(-4,4.8,,100), X2 = seq(-4.3,3.3,,100))
+
+pptree <- PPtreeViz::PPTreeclass(Sim~., data = dat.pl2, "LDA")
+ppred.sim <- PPtreeViz::PPclassify(pptree, test.data = grilla, Rule = 1)
+grilla$ppred<-ppred.sim[[2]]
+
+rpart.crab <- rpart::rpart(Sim ~ X1 + X2, data = dat.pl2)
+rpart.pred <- predict(rpart.crab, newdata = grilla, type="class")
+
+p <- ggplot2::ggplot(data = grilla ) +
+  ggplot2::geom_point(ggplot2::aes(x = X1, y = X2, color = as.factor(ppred),shape=as.factor(ppred)),alpha = .20)+
+  geom_abline(intercept= pptree$splitCutoff.node[[1]]/pptree$projbest.node[[3]], slope= -pptree$projbest.node[[1]]/pptree$projbest.node[[3]], size=1 )+ scale_colour_brewer(name="Class",type="qual",palette="Dark2")+ggplot2::theme_bw() +
+  geom_abline(intercept= pptree$splitCutoff.node[[2]]/pptree$projbest.node[[4]], slope=-pptree$projbest.node[[2]]/pptree$projbest.node[[4]],size=1)+ scale_shape_discrete(name='Class')
+
+pl.pp <- p + ggplot2::geom_point(data = dat.pl2, ggplot2::aes(x = X1 , y = X2, group= Sim, shape = Sim, color=Sim), size = I(3)  ) + theme(legend.position = "bottom", legend.text = element_text(size = 6), aspect.ratio = 1) + scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
+
+p2 <- ggplot2::ggplot(data = grilla ) + ggplot2::geom_point(ggplot2::aes(x = X1, y = X2  , color = as.factor(rpart.pred),shape =  as.factor(rpart.pred)), alpha = .2) +
+  ggplot2::scale_colour_brewer(name = "Class",labels = levels(dat.pl2$Sim),type="qual",palette="Dark2") +
+  ggplot2::theme_bw() + scale_shape_discrete(name='Class')+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
+
+pl.rpart <- p2 + ggplot2::geom_point(data = dat.pl2, ggplot2::aes(x = X1 , y = X2, group=Sim,shape = Sim, color=Sim), size = I(3)  ) + theme(legend.position = "bottom", legend.text = element_text(size = 6), aspect.ratio = 1)
+
+grid.arrange(pl.rpart,pl.pp,ncol=2)
+
+```
+</center>
+
+##<span style="color:#26734d">PPforest</span>  
+Projection pursuit classification random forest [@dasilvappforest] is an ensemble learning method, built on bagged trees.  
+
+There are two main concepts used in PPforest, bootstrap aggregation (\cite{breiman1996bagging} and \cite{breiman1996heuristics}) random feature selection (\cite{amit1997shape} and \cite{ho1998random}) to individual classification trees for prediction.
+The individual classifier is a PPtree [@lee2005projection] instead of CART.
+
+The splits in PPforest are based on a linear combination of randomly chosen variables.
+Utilizing linear combinations of variables the individual model (PPtree) separates classes taking into account the correlation between variables.
+
+
+##<span style="color:#26734d">PPforest algorithm</span> 
+
+
+1. Input: $L=\{(x_i,y_i), i=1,... n\}$,  $\ y_i\in \{1,..., g\}$ where $y_i$ is the class information
+2. Draw $b=1,\ldots, B$ bootstrap samples, $L^{*b}$ of size $n$ from $L$
+3. For each bootstrap sample grow a PPtree classifier $T^{*b}$ and for every node a sample of m variables without replacement is drawn.
+4. Predict the classes of each case not included in $L^*$ and compute the oob error.
+5. Based on majority vote predict the class in a new data set.
+
+##<span style="color:#26734d">Simulations</span>
+The purpose of the design of the simulation study is to determine where PPforest beats RF, hopefully somewhere, and where old is still  best.
+It has to be something to do with linear combinations of variables where PPF beats RF, and how that manifests in the current design is not clear.
+
+
+##<span style="color:#26734d">Defferent approaches</span>
+
+Three simulation approaches
+
+* Response variable based on theoretical quantile from a Normal distribution.
+Simulated data are not used to define classes but its distribution is used to define them. Classes of the response are defined by $\sum_i^p X_i$.
+Main advantage of this approach is it is easily generalized to any number of groups.
+
+* Response variable simulate as independent normal with different means. Separation between groups only in one direction.
+* Response variable based on theoretical quantile from a Normal distribution.
+Simulated data are not used to define classes but its distribution is used to define classes.
+Simulated data are not used to define classes but its distribution is used to define them. Classes of the response are defined by  $e_2^2 X$ ($e_2$ second eigen vector of $\Sigma$).
+Main advantage of this approach is it is easily generalized to any number of groups.
+
+
+
+##<span style="color:#26734d">Sim option 1 </span>
+
+
+##<span style="color:#26734d">Sim option LATEST </span>
+
+
+## <span style="color:#26734d">Shinyapp and more</span>
+
+
+1. shinyapp example:https://natydasilva.shinyapps.io/shinyppforest
+2. Slides: https://github.com/natydasilva/slides
+3. PPforest package:https://github.com/natydasilva/PPforest
+4. email: ndasilva@iastate.edu
+5. twitter : https://twitter.com/pacocuak
+
+
+
+## Bibliography
+
