@@ -58,7 +58,7 @@ The individual classifier in **PPforest** is a **PPtree** [@lee2005projection].
 The splits in **PPforest** are based on a linear combination of randomly chosen variables.
 Utilizing linear combinations of variables the individual model (**PPtree**) separates classes taking into account the correlation between variables.
 
-## <span style="color:#26734d"> PPtree </span> 
+## <span style="color:#26734d"> PPtree, individual classifier for PPforest  </span> 
 <!-- Combines tree structure methods with projection pursuit dimension reduction. -->
 Treats the data always as a two-class system.
 
@@ -164,7 +164,7 @@ grid.arrange(pl.rpart,pl.pp,ncol=2)
 5. Based on majority vote predict the class in a new data set.
 
 
-##<span style="color:#26734d">PPforest love crab data!!</span> 
+##<span style="color:#26734d">PPforest loves crab data!!</span> 
 
 
 Measurements on rock crabs, 200 observations. 4 classes species-sex. 
