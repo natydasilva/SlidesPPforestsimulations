@@ -25,13 +25,11 @@ knitr::opts_chunk$set(echo = FALSE)
 
 -Ensemble models
 
--PPtree
-
 -PPforest
 
 -Simulations results
 
--Maybe some diagnostics for PPforest paper advances
+-Maybe some diagnostics for PPforest ...
 
 ## <span style="color:#26734d">Motivation</span> 
 **PPforest** is a new method based on bagged projection pursuit trees for classification problems.
@@ -50,20 +48,22 @@ Projection pursuit classification random forest [@dasilvappforest] is an ensembl
 
 Main concepts:
 
-* Bootstrap aggregation (\cite{breiman1996bagging} and \cite{breiman1996heuristics})
+* Bootstrap aggregation (@breiman1996bagging and @breiman1996heuristics)
 
-* Random feature selection (\cite{amit1997shape} and \cite{ho1998random}) to individual classification trees for prediction.
+* Random feature selection (@amit1997shape and @ho1998random) to individual classification trees for prediction.
 
 
 ##<span style="color:#26734d">PPforest, individual classifiers</span>  
 The individual classifier in **PPforest** is a **PPtree** [@lee2005projection].
 
 The splits in **PPforest** are based on a linear combination of randomly chosen variables.
-Utilizing linear combinations of variables the individual model (PPtree) separates classes taking into account the correlation between variables.
+Utilizing linear combinations of variables the individual model (**PPtree**) separates classes taking into account the correlation between variables.
 
 ## <span style="color:#26734d"> PPtree </span> 
 <!-- Combines tree structure methods with projection pursuit dimension reduction. -->
-Treats the data always as a two-class system,  when the classes are more than two the algorithm uses a two step  projection pursuits optimization in every node split.
+Treats the data always as a two-class system.
+
+When the classes are more than two the algorithm uses a two step  projection pursuits optimization in every node split.
 
 <!-- 1. Optimize a projection pursuit index to find an optimal one-dimension projection $\alpha^*$ for separating all classes in the current data.  -->
 <!-- 2.With the projected data redefine the problem in a two class problem by comparing means, and assign a new label $``g1"$ or $``g2"$ to each observation, a new variable $y_i^*$ is created.  The new groups ``g1'' and ``g2'' can contain more than one original classes.  -->
@@ -142,17 +142,17 @@ grid.arrange(pl.rpart,pl.pp,ncol=2)
 ```
 </center>
 
-##<span style="color:#26734d">PPforest</span>  
-Projection pursuit classification random forest [@dasilvappforest] is an ensemble learning method, built on bagged trees.  
+<!-- ##<span style="color:#26734d">PPforest</span>   -->
+<!-- Projection pursuit classification random forest [@dasilvappforest] is an ensemble learning method, built on bagged trees.   -->
 
-Main concepts:
+<!-- Main concepts: -->
 
-* Bootstrap aggregation (\cite{breiman1996bagging} and \cite{breiman1996heuristics}) 
+<!-- * Bootstrap aggregation (@breiman1996bagging and @breiman1996heuristics)  -->
 
-* Random feature selection (\cite{amit1997shape} and \cite{ho1998random}) to individual classification trees for prediction.
+<!-- * Random feature selection (@amit1997shape and @ho1998random) to individual classification trees for prediction. -->
 
-The splits in PPforest are based on a linear combination of randomly chosen variables.
-Utilizing linear combinations of variables the individual model (PPtree) separates classes taking into account the correlation between variables.
+<!-- The splits in PPforest are based on a linear combination of randomly chosen variables. -->
+<!-- Utilizing linear combinations of variables the individual model (PPtree) separates classes taking into account the correlation between variables. -->
 
 
 ##<span style="color:#26734d">PPforest algorithm</span> 
@@ -210,10 +210,13 @@ pprf.crab
 
 ##<span style="color:#26734d">Simulations</span>
 
-The purpose is to determine where **PPforest** beats **randomForest**, hopefully somewhere.
+The purpose is to determine where **PPforest** works well.
+
+<!-- beats **randomForest**, hopefully somewhere. -->
 
 This method should work better in cases were the variables are highly correlated and the separation between classes occur on combinations of variables. 
 
+We will check where **PPforest** beats **randomForest**
 
 ##<span style="color:#26734d">Defferent approaches</span>
 
@@ -230,7 +233,7 @@ Three simulation approaches
 <!-- Simulated data are not used to define classes but its distribution is used to define them. Classes of the response are defined by  $e_2^2 X$ ($e_2$ second eigen vector of $\Sigma$). -->
 <!-- Main advantage of this approach is it is easily generalized to any number of groups. -->
 
-* Separate simulation for each group
+* Separate simulation for each group, separation between groups in one direction
 
 ##<span style="color:#26734d">Simulation 1  </span>
 
