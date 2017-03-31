@@ -172,7 +172,7 @@ This method should work better in cases were the variables are highly correlated
 
 Three simulation approaches
 
-*Response based on theoretical quantiles of $\sum_{i=1}^p X_i$ 
+* Response based on theoretical quantiles of $\sum_{i=1}^p X_i$ 
 <!-- Response variable based on theoretical quantile from a Normal distribution. -->
 <!-- Simulated data are not used to define classes but its distribution is used to define them. Classes of the response are defined by $\sum_i^p X_i$. -->
 <!-- Main advantage of this approach is it is easily generalized to any number of groups. -->
@@ -185,11 +185,221 @@ Three simulation approaches
 
 * Separate simulation for each group
 
-##<span style="color:#26734d">Response based on theoretical quantiles of $\sum_{i=1}^p X_i$  </span>
+##<span style="color:#26734d">Simulation 1  </span>
 
 
-##<span style="color:#26734d">Response based on theoretical quantiles of the PCA</span>
+* $X \sim N_{p}(\mu, \Sigma)$ with $\mu = (0,\ldots,0)$, $(\Sigma)_{ii} =1$ and $(\Sigma)_{ij} =\rho$.
+$Z_i = \sum_{j = 1}^p X_{ij}$
+* Let $B=(1,\ldots 1)$ and $\sigma^*=B^T\Sigma B$ then $Z_i\sim N(0,\sigma^*)$
+* We use the theoretic quantiles of $Z_i$ to simulate the response.
+Ej, if $G=2$ then $Y_i = I(Z_i> 0)$ and in a similar way using $Z_i$ quantiles for more groups.
 
+Important: I'm not using the data to construct Y.
+
+Advantage: easy to generalize to $g$ groups\\
+Drawback: correlation among $X$ and linear combination split are in opposite directions.
+
+
+##<span style="color:#26734d">Simulation 1, scenarios  </span>
+<!-- \begin{center} -->
+<!--   \begin{tabular}{|c  | c |} -->
+<!--     \hline -->
+<!--     \bf{Parameters} & \bf{Values}  \\ \hline -->
+<!--     $\rho$ & $\{0, 0.3, 0.6, 0.9\}$\\ \hline -->
+<!--     Classes & $\{2, 4, 8\}$\\ \hline -->
+<!--     Predictors & $\{5, 50, 100\}$ \\ \hline -->
+<!--     Replicates & $20$\\ \hline -->
+<!--     n & 200\\ -->
+<!--     \hline -->
+<!--   \end{tabular} -->
+<!-- \end{center} -->
+
+Parameter   | Value                  |
+---------   | -------                |
+$\rho$      | $\{0, 0.3, 0.6, 0.9\}$ |
+Classes     | $\{2, 4, 8\}$          |
+Predictors  | $\{5, 50, 100\}$       |
+Replicates  | $20$                   |
+
+##<span style="color:#26734d">Simulation 1, data with $\rho=0$  </span>
+<center>
+```{r, echo = FALSE, fig.height = 5, fig.width = 5, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+library(MASS)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(RColorBrewer)
+library(PPtreeViz)
+library(gridExtra)
+library(reshape2)
+library(PPforest)
+library(randomForest)
+library(plotly)
+
+
+simu1 <- function( rep, rho, p, class, n, theta = 0){
+
+  Sigma1 <- matrix(rho, p, p, byrow = T)
+  diag(Sigma1) <- 1
+  dat1 <- as.data.frame(mvrnorm(n = n, rep(0,p), Sigma1))
+  #simulate classes using the theoric quantiles of the  sum of the explanatory variables to get balanced data and separation
+  #within classes based on linear combination of variables
+
+  B <- rep(1, p)
+  qnt2 <- qnorm(seq(0, 1, 1/class ), 0, sqrt(t(B)%*%Sigma1%*%(B)))
+  y2 <- as.factor(cut(apply(dat1, 1,sum), breaks = qnt2, include.lowest = TRUE))
+  levels(y2) <- as.factor(1:class)
+  sim1 <- cbind(y2,dat1)
+
+  if(theta!=0){
+  R <-  rotmat(theta, p)
+  sim1[ , -1] <- t(apply(sim1[,-1], 1, function(x) R%*%x)) %>% as.data.frame()
+}
+  return(sim1)
+}
+opi <- expand.grid( rho = c(0, 0.3, 0.6, 0.9),cl = c(2,4,8),
+                    p = c(5, 50, 100), n = 200,  rep = 1)
+
+set.seed(123)
+simu.sce1 <- mlply(opi, simu1)
+aux <- ldply(simu.sce1, function(x){
+  y2 = x[,1]
+  Z = apply(x[,-1],1,sum)
+ if(ncol(x)-1==5){
+   W= apply(x[,-1],1,function(w) w%*%c(1,1, 0,-1,-1))
+ }else{
+  W = apply(x[,-1], 1, function(w) w%*%rep(c(1,-1),each =(length(w))/2))
+
+ }
+  return(data.frame(y2,Z,W))
+})
+
+
+aux %>% filter(rho==0) %>%ggplot(  aes( y = W, x = Z, color = y2) ) + geom_point(alpha=.4, size=I(2))  + facet_grid(cl~p , labeller = label_both) + theme(legend.position = "bottom")+
+  scale_colour_brewer(name="Class",type="qual",palette="Dark2") +labs(y="Z'W=0", x="Z")
+
+
+
+```
+</center>
+
+##<span style="color:#26734d">Simulation 1, data with $p=50$  </span>
+<center>
+```{r, echo = FALSE, fig.height = 5, fig.width = 5, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+
+aux %>% filter(p==50) %>%ggplot(  aes( y = W, x = Z, color = y2) ) + geom_point(alpha=.4, size=I(2))  + facet_grid(cl~rho , labeller = label_both)+ theme(legend.position = "bottom")+
+  scale_colour_brewer(name="Class",type="qual",palette="Dark2") +labs(y="W s.t Z'W=0", x="Z")
+```
+</center>
+
+##<span style="color:#26734d">Simulation 1, results  </span>
+<center>
+```{r, echo = FALSE, fig.height = 5, fig.width = 5, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+
+load("simall1.Rdata")
+mean_all1 <- plyr::ddply( all1,.( rho, cl, p, n,  Model), function(x) mean(x$V1) )
+sd_all1 <- plyr::ddply( all1,.(rho, cl, p, n, Model), function(x) sd(x$V1) )
+pl_all1 <- merge( mean_all1, sd_all1, by = c("rho", "cl", "p", "n", "Model") )
+
+
+ggplot( data = pl_all1, aes( y = V1.x, x = rho, color = Model ) ) + geom_line()  + facet_grid(cl~p , labeller = label_both)+geom_errorbar(aes(ymin = V1.x - V1.y, ymax = V1.x + V1.y), width = .1) + labs(x = "Correlation", y = "Mean OOB error ") + theme(legend.position = "bottom")
+
+
+```
+</center>
+
+##<span style="color:#26734d">Simulation 2</span>
+
+*  $X \sim N_{p}(\mu, \Sigma)$ with $\mu = (0,\ldots,0)$, $(\Sigma)_{ii} =1$ and $(\Sigma)_{ij} =\rho$.
+*  Using PCA a new variable $Z_i=\sum_{i=1}^p e_{2_i}X_i$ where $e_2$ is the second eigen vector of $\Sigma$.
+Since $X\sim N(.,.)$ then $Z\sim N(.,.)$
+*  $\sigma^*=e_2^T\Sigma e_2$   then $Z_i\sim N(0,\sigma^*)$
+* We use the theoretic quantiles to simulate the response, if $G=2$ then $Y_i = I(Z_i > 0 )$ and in a similar way using $Z_i$ quantiles if the groups are 4 and so on.
+
+Important: I'm not using the data to construct Y.
+
+##<span style="color:#26734d">Simulation 2, scenarios  </span>
+
+Parameter   | Value                  |
+---------   | -------                |
+$\rho$      | $\{0, 0.3, 0.6, 0.9\}$ |
+Classes     | $\{2, 4, 8\}$          |
+Predictors  | $\{5, 50, 100\}$       |
+Replicates  | $20$                   |
+
+
+##<span style="color:#26734d">Simulation 2, data  $\rho=0$ </span>
+<center>
+```{r, echo = FALSE, fig.height = 5, fig.width = 5, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+simuacp <- function( rep, rho, p, class, n, comp = 2, theta = 0){
+
+  Sigma1 <- matrix(rho, p, p, byrow = T)
+  diag(Sigma1) <- 1
+  dat1 <- as.data.frame(mvrnorm(n = n, rep(0,p), Sigma1))
+
+  e <- eigen(Sigma1)$vectors[,comp]
+  dat1acp <-as.matrix(dat1)%*%e
+
+  qnt2 <- qnorm(seq(0, 1, 1/class ), 0, sqrt(t(e)%*%Sigma1%*%(e)))
+  y2 <- as.factor(cut(dat1acp, breaks = qnt2, include.lowest = TRUE))
+
+  levels(y2) <- as.factor(1:class)
+  sim1 <- cbind(y2,dat1)
+
+  if(theta!=0){
+    R <-  rotmat(theta, p)
+    sim1[ , -1] <- t(apply(sim1[,-1], 1, function(x) R%*%x)) %>% as.data.frame()
+  }
+  return(sim1)
+}
+
+simuacpaux <- function( rep, rho, p, class, n, comp = c(1,2)){
+
+  Sigma1 <- matrix(rho, p, p, byrow = T)
+  diag(Sigma1) <- 1
+  dat1 <- as.data.frame(mvrnorm(n = n, rep(0,p), Sigma1))
+
+  e <- eigen(Sigma1)$vectors[,comp]
+  dat1acp <-as.matrix(dat1)%*%e
+
+  qnt2 <- qnorm(seq(0, 1, 1/class ), 0, sqrt(t(e[,2])%*%Sigma1%*%(e[,2])))
+  y2 <- as.factor(cut(dat1acp[,2], breaks = qnt2, include.lowest = TRUE))
+
+  levels(y2) <- as.factor(1:class)
+  sim1 <- data.frame(y2,dat1, dat1acp)
+
+  
+  return(sim1)
+}
+
+opi <- expand.grid( rho = c(0, 0.3, 0.6, 0.9),cl = c(2,4,8),
+                    p = c(5, 50, 100), n = 200,  rep = 1)
+
+set.seed(123)
+simu.sceacp <- mlply(opi, simuacpaux)
+
+aux <- ldply(simu.sceacp, function(x){
+  y2 <- x[,1]
+  
+  Z <- x$X2
+ W <- x$X1
+  return(data.frame(y2,Z,W))
+})
+
+
+aux %>% filter(rho==0) %>%ggplot(  aes( y = W, x = Z, color = y2) ) + geom_point(alpha=.4, size=I(2))  + facet_grid(cl~p , labeller = label_both) + theme(legend.position = "bottom")+
+  scale_colour_brewer(name="Class",type="qual",palette="Dark2") +labs(y="W s.t Z'W=0", x="Z")
+
+```
+</center>
+
+## <span style="color:#26734d">Separate simulation for each group</span>
+<center>
+```{r, echo = FALSE, fig.height = 5, fig.width = 5, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+aux %>% filter(p==50) %>%ggplot(  aes( y = Z, x = W, color = y2) ) + geom_point(alpha=.4, size=I(2))  + facet_grid(cl~rho , labeller = label_both) + theme(legend.position = "bottom")+
+  scale_colour_brewer(name="Class",type="qual",palette="Dark2") +labs(y="Z'W=0", x="Z")
+```
+</center>
 
 ## <span style="color:#26734d">Separate simulation for each group</span>
 
