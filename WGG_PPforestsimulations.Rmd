@@ -403,9 +403,113 @@ aux %>% filter(p==50) %>%ggplot(  aes( y = Z, x = W, color = y2) ) + geom_point(
 ```
 </center>
 
-## <span style="color:#26734d">Separate simulation for each group</span>
-## <span style="color:#26734d">Separate simulation for each group</span>
+## <span style="color:#26734d">Simulation 2, results</span>
 
+<center>
+```{r, echo = FALSE, fig.height = 5, fig.width = 5, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+
+load("simallacp.Rdata")
+
+mean_all1 <- ddply( all1,.( rho, cl, p, n,  Model), function(x) mean(x$V1) )
+sd_all1 <- ddply( all1,.(rho, cl, p, n, Model), function(x) sd(x$V1) )
+pl_all1 <- merge( mean_all1, sd_all1, by = c("rho", "cl", "p", "n", "Model") )
+
+
+ggplot( data = pl_all1, aes( y = V1.x, x = rho, color = Model ) ) + geom_line()  + facet_grid(cl~p , scales = "free_y", labeller = label_both)+geom_errorbar(aes(ymin = V1.x - V1.y, ymax = V1.x + V1.y), width = .1) + labs(x = "Correlation", y = "Mean OOB error ") + theme(legend.position = "bottom")
+
+
+```
+</center>
+
+## <span style="color:#26734d">Simulation 3</span>
+
+
+* $x_{2,i} = \alpha + \beta x_{1,i} + \epsilon_i$ 
+* $\epsilon_i \sim N(0, \sigma^2)$
+* $x_{1, i} \sim N(0, 1)$
+* $\rho = \frac{\beta}{\sqrt{\beta^2+\sigma^2}}$
+
+
+<!-- \begin{eqnarray*} -->
+<!-- \begin{pmatrix}x_{i,1}\\ -->
+<!-- x_{i,2} -->
+<!-- \end{pmatrix} & \sim & N\left[\left(\begin{array}{c} -->
+<!-- 0\\ -->
+<!-- 0 -->
+<!-- \end{array}\right),\left(\begin{array}{ccc} -->
+<!-- 1 & \beta \\ -->
+<!-- \beta & \beta^2+\sigma^2 -->
+<!-- \end{array}\right)\right]\\ -->
+<!-- \rho &=& \frac{\beta}{\sqrt{\beta^2+\sigma^2}}\\ -->
+<!-- \beta &=&\sqrt{\frac{\rho^2 \sigma^2}{1-\rho^2}} -->
+<!-- \end{eqnarray*} -->
+
+
+## <span style="color:#26734d">Simulation 3, scenarios</span>
+
+Parameter         | Value                  |
+---------         | -------                |
+ $\sigma^2$       | $\{1, 10, 20, 30\}$    |
+Classes           | $2$                    |
+$\beta_{g1}, \beta_{g2}$ | $\{0,2^1, 2^2,2^3, 2^4, 2^5\}$       |
+$\alpha_{g1}$ | 0 |
+$\alpha_{g2}$ | $\{5, 10, 20, 30\}$ 
+Replicates  | $20$                   |
+n | 200
+
+    
+## <span style="color:#26734d">Simulation 3, data</span>
+<center>
+```{r, echo = FALSE, fig.height = 6, fig.width = 8, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+
+simuFINAL <- function( rep, beta1, beta2,alpha1,alpha2, n, classes, sig){
+
+set.seed(123)
+eps <- rnorm(n, sd = sqrt(sig))
+x1 <- rnorm(n)
+alp <- c( rep(alpha1, each = n/classes), rep(alpha2, each = n/classes))
+bet <- c( rep(beta1, each = n/classes), rep(beta2, each = n/classes))
+x2 <- alp + bet*x1 + eps
+
+y <- factor(rep(c(1:classes), each=n/classes))
+
+dat1 <- data.frame( y , x1, x2, x3 = rnorm(200), x4 =rnorm(200))
+
+  return(dat1)
+
+}
+
+
+
+ opi <- expand.grid( beta1 = c( 0, 2^(1:5) ), beta2 =c( 0, 2^(1:5) ), alpha1= 0, alpha2 = c(5, 10, 20, 30), sig =c(1,10, 20, 30),classes= 2,n = 200,  rep = 1:20)
+opisub <- opi %>% filter(beta1 ==  beta2)
+ 
+simu.sceFINAL <- mlply(opisub, simuFINAL)
+
+
+aux <- ldply(simu.sceFINAL, function(x) 
+  x%>%select(x1,x2,y)) %>% filter(rep == 1, alpha2 == 5)
+
+
+aux  %>%ggplot(  aes( y =x2, x = x1, color = y) ) + geom_point(alpha=.4, size=I(2))  + facet_grid(beta1~sig , labeller = label_both, scale="free_y") + theme(legend.position = "bottom", aspect.ratio = 1)+
+  scale_colour_brewer(name="Class",type="qual",palette="Dark2") 
+```
+</center>
+
+## <span style="color:#26734d">Simulation 3, results $alpah_{g2}=5$</span>
+```{r, echo = FALSE, fig.height = 6, fig.width = 6, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+load("simallFINALbig.Rdata")
+
+
+mean_all1 <- ddply( all4,.( beta1, beta2, alpha1, alpha2, classes, sig, n,  Model), function(x) mean(x$V1) )
+sd_all1 <- ddply( all4,.(beta1, beta2, alpha1, alpha2, classes,sig,  n,  Model), function(x) sd(x$V1) )
+pl_all1 <- merge( mean_all1, sd_all1, by = c("beta1",   "beta2" ,  "alpha1" , "alpha2" , "classes" ,"sig",
+"n",       "Model") )
+
+pl_all1 %>% filter(alpha2==5)%>%
+ggplot(  aes( y = V1.x, x =beta1, color = Model ) ) + geom_line()  + facet_grid(sig~alpha2 , scales = "free_y", labeller = label_both)+geom_errorbar(aes(ymin = V1.x - V1.y, ymax = V1.x + V1.y), width = .1) + labs(x = "Slope", y = "Mean OOB error ") + theme(legend.position = "bottom")
+```
+</center>
 ## <span style="color:#26734d">info</span>
 
 
