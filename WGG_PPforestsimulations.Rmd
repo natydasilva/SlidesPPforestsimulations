@@ -240,13 +240,13 @@ Three simulation approaches
 
 * $X \sim N_{p}(\mu, \Sigma)$ with $\mu = (0,\ldots,0)$, $(\Sigma)_{ii} =1$ and $(\Sigma)_{ij} =\rho$.
 $Z_i = \sum_{j = 1}^p X_{ij}$
-* Let $B=(1,\ldots 1)$ and $\sigma^*=B^T\Sigma B$ then $Z_i\sim N(0,\sigma^*)$
 * We use the theoretic quantiles of $Z_i$ to simulate the response.
 Ej, if $G=2$ then $Y_i = I(Z_i> 0)$ and in a similar way using $Z_i$ quantiles for more groups.
 
 Important: I'm not using the data to construct Y.
 
-Advantage: easy to generalize to $g$ groups\\
+Advantage: easy to generalize to $g$ groups.
+
 Drawback: correlation among $X$ and linear combination split are in opposite directions.
 
 
@@ -367,6 +367,13 @@ Since $X\sim N(.,.)$ then $Z\sim N(.,.)$
 * We use the theoretic quantiles to simulate the response, if $G=2$ then $Y_i = I(Z_i > 0 )$ and in a similar way using $Z_i$ quantiles if the groups are 4 and so on.
 
 Important: I'm not using the data to construct Y.
+
+Advantage: easy to generalize to $g$ groups. Correlation among $X$ and linear combination split are in the same direction.
+
+Drawback: I don't sure how to justify this construction 
+
+
+
 
 ##<span style="color:#26734d">Simulation 2, scenarios  </span>
 
@@ -503,7 +510,7 @@ Parameter         | Value                  |
 Classes           | $2$                    |
 $\beta$ | $\{0,2^1, 2^2,2^3, 2^4, 2^5\}$       |
 $\alpha_{g1}$ | 0 |
-$\alpha_{g2}$ | $\{5, 10, 20, 30\}$ 
+$\alpha_{g2}$ | $5$ 
 Replicates  | $20$                   |
 n | 200
 
@@ -572,7 +579,7 @@ ggplot(  aes( y = V1.x, x =rho, color = Model ) ) + geom_line()  + facet_grid(si
 
 
 1.  PPforest package:https://github.com/natydasilva/PPforest
-2. Slides: https://github.com/natydasilva/SlidesPPforestsimulations
+2.  Slides: https://github.com/natydasilva/SlidesPPforestsimulations
 3.  Viz : https://natydasilva.shinyapps.io/shinyppforest
 
 
