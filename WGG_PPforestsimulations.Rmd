@@ -395,7 +395,7 @@ aux %>% filter(rho==0) %>%ggplot(  aes( y = W, x = Z, color = y2) ) + geom_point
 ```
 </center>
 
-## <span style="color:#26734d">Simulation 1, data with $p=50$</span>
+## <span style="color:#26734d">Simulation 2, data with $p=50$</span>
 <center>
 ```{r, echo = FALSE, fig.height = 5, fig.width = 5, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
 aux %>% filter(p==50) %>%ggplot(  aes( y = Z, x = W, color = y2) ) + geom_point(alpha=.4, size=I(2))  + facet_grid(cl~rho , labeller = label_both) + theme(legend.position = "bottom")+
