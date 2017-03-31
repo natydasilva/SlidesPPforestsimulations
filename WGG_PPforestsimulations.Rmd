@@ -92,6 +92,7 @@ library(reshape2)
 library(PPforest)
 library(plyr)
 library(dplyr)
+library(GGally)
 
 ```
 <center>
@@ -162,6 +163,50 @@ Utilizing linear combinations of variables the individual model (PPtree) separat
 3. For each bootstrap sample grow a PPtree classifier $T^{*b}$ and for every node a sample of m variables without replacement is drawn.
 4. Predict the classes of each case not included in $L^*$ and compute the oob error.
 5. Based on majority vote predict the class in a new data set.
+
+
+##<span style="color:#26734d">PPforest love crab data!!</span> 
+
+
+Measurements on rock crabs, 200 observations. 4 classes species-sex. 
+
+* FL the size of the frontal lobe length, in mm
+* RW rear width, in mm
+* CL length of mid-line of the carapace, in mm
+* CW maximum width of carapace, in mm
+* BD depth of the body; for females, measured after displacement of the abdomen, in mm
+
+##<span style="color:#26734d">Crab data</span> 
+
+<center>
+```{r, echo = FALSE, fig.height = 5, fig.width = 5, fig.align = "center", cache = TRUE}
+
+ GGally::ggpairs(PPforest::crab,
+    columns= 2:6,
+    ggplot2::aes(colour=Type,alpha=.3),
+    lower=list(continuous='points'),
+    axisLabels='none',
+    upper=list(continuous='blank')
+     , legend = NULL)
+```
+
+##<span style="color:#26734d">PPforest vs RF</span>
+```{r, chache=TRUE, size="small",echo=FALSE}
+ rf.crab <- randomForest::randomForest(Type~., data = crab, 
+              proximity = TRUE, ntree = 200)
+pprf.crab <- PPforest(data = crab, class = "Type",
+ std = TRUE, size.tr = 1, m = 200,
+ size.p = .5, PPmethod = 'LDA' )
+```
+
+```{r, chache=TRUE, size="tiny", message=FALSE}
+
+rf.crab
+```
+##<span style="color:#26734d">PPforest vs RF</span>
+```{r, chache=TRUE, size="tiny", message=FALSE}
+pprf.crab 
+```
 
 ##<span style="color:#26734d">Simulations</span>
 
@@ -424,11 +469,13 @@ ggplot( data = pl_all1, aes( y = V1.x, x = rho, color = Model ) ) + geom_line() 
 ## <span style="color:#26734d">Simulation 3</span>
 
 
-* $x_{2,i} = \alpha + \beta x_{1,i} + \epsilon_i$ 
+* $x_{2,i,g} = \alpha_{g} + \beta x_{1,i} + \epsilon_i$ 
 * $\epsilon_i \sim N(0, \sigma^2)$
 * $x_{1, i} \sim N(0, 1)$
 * $\rho = \frac{\beta}{\sqrt{\beta^2+\sigma^2}}$
 
+The way to control the correlation between $x_1$ and $x_2$ is changing the slope.
+The two groups are different because of the intercept.
 
 <!-- \begin{eqnarray*} -->
 <!-- \begin{pmatrix}x_{i,1}\\ -->
@@ -451,7 +498,7 @@ Parameter         | Value                  |
 ---------         | -------                |
  $\sigma^2$       | $\{1, 10, 20, 30\}$    |
 Classes           | $2$                    |
-$\beta_{g1}, \beta_{g2}$ | $\{0,2^1, 2^2,2^3, 2^4, 2^5\}$       |
+$\beta$ | $\{0,2^1, 2^2,2^3, 2^4, 2^5\}$       |
 $\alpha_{g1}$ | 0 |
 $\alpha_{g2}$ | $\{5, 10, 20, 30\}$ 
 Replicates  | $20$                   |
@@ -496,7 +543,7 @@ aux  %>%ggplot(  aes( y =x2, x = x1, color = y) ) + geom_point(alpha=.4, size=I(
 ```
 </center>
 
-## <span style="color:#26734d">Simulation 3, results $alpah_{g2}=5$</span>
+## <span style="color:#26734d">Simulation 3, results </span>
 ```{r, echo = FALSE, fig.height = 6, fig.width = 6, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
 load("simallFINALbig.Rdata")
 
@@ -510,15 +557,20 @@ pl_all1 %>% filter(alpha2==5)%>%
 ggplot(  aes( y = V1.x, x =beta1, color = Model ) ) + geom_line()  + facet_grid(sig~alpha2 , scales = "free_y", labeller = label_both)+geom_errorbar(aes(ymin = V1.x - V1.y, ymax = V1.x + V1.y), width = .1) + labs(x = "Slope", y = "Mean OOB error ") + theme(legend.position = "bottom")
 ```
 </center>
-## <span style="color:#26734d">info</span>
+
+## <span style="color:#26734d">Simulation 3, results </span>
+```{r, echo = FALSE, fig.height = 6, fig.width = 6, fig.align = "center", cache = TRUE, warning=FALSE, message=FALSE, echo=FALSE}
+pl_all1 %>%filter(alpha2==5)%>% mutate(rho = round(beta1/sqrt(beta1^2+sig), 3)) %>%
+ggplot(  aes( y = V1.x, x =rho, color = Model ) ) + geom_line()  + facet_grid(sig~classes , scales = "free_y", labeller = label_both)+geom_errorbar(aes(ymin = V1.x - V1.y, ymax = V1.x + V1.y), width = .1) + labs(x = "Correlation between x1 and x2", y = "Mean OOB error ") + theme(legend.position = "bottom")
+
+```
+
+## <span style="color:#26734d">Info </span>
 
 
-1. shinyapp example:https://natydasilva.shinyapps.io/shinyppforest
-2. Slides: https://github.com/natydasilva/slides
-3. PPforest package:https://github.com/natydasilva/PPforest
-4. email: ndasilva@iastate.edu
-5. twitter : https://twitter.com/pacocuak
-
+1.  PPforest package:https://github.com/natydasilva/PPforest
+2. Slides: https://github.com/natydasilva/SlidesPPforestsimulations
+3.  Viz : https://natydasilva.shinyapps.io/shinyppforest
 
 
 ## Bibliography
