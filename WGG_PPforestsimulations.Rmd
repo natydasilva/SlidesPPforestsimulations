@@ -29,7 +29,6 @@ knitr::opts_chunk$set(echo = FALSE)
 
 -Simulations results
 
--Maybe some diagnostics for PPforest ...
 
 ## <span style="color:#26734d">Motivation</span> 
 **PPforest** is a new method based on bagged projection pursuit trees for classification problems.
